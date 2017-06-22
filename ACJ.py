@@ -1,5 +1,6 @@
 import random
 import numpy as np
+import pickle
 
 class ACJ(object):
     '''Base object to hold comparison data and run algorithm
@@ -17,24 +18,40 @@ class ACJ(object):
         self.track = np.zeros((len(data), len(data)))
         self.n = len(data)
         self.swis = swis
+        self.roundList = []
+        self.step = -1
 
     def nextRound(self):
         '''Returns next round of pairs'''
         self.round = self.round+1
         if self.round<2:
+            self.updateAll()
             print("rand")
-            return self.randomPairs()
+            self.roundList = self.randomPairs()
+            return self.roundList
         elif self.round<2+self.swis:
             self.updateAll()
             print("swis")
-            return self.scorePairs()
+            self.roundList = self.scorePairs()
+            return self.roundList
         else:
             print("val")
             #if self.round == 1+swis:
                 #self.dat[3] = (1/self.dat[1].size)*self.dat[2][:]
             self.updateAll()
-            return self.valuePairs()
+            self.roundList = self.valuePairs()
+            return self.roundList
             #return self.scorePairs()
+
+    def nextPair(self):
+        '''Returns next pair'''
+        self.step = self.step + 1
+        if self.step >= len(self.roundList):
+            self.nextRound()
+            self.step = 0
+
+        return self.roundList[self.step]
+
 
     def prob(self, iA):
         '''Retunrs numpy array of the probability of A beating other values
@@ -188,8 +205,8 @@ class ACJ(object):
 
 if __name__ == "__main__":
     swis = 5
-    rounds = 20
-    length = 1000
+    rounds = 10
+    length = 100
     errBase = 0.4
     judges = 3
     true = np.asarray([i+1 for i in range(length)])
@@ -197,7 +214,30 @@ if __name__ == "__main__":
     #np.random.shuffle(dat)
     acj = ACJ(dat, swis=swis, initVal=0)
 
-    for _ in range(rounds):
+    while (acj.round < rounds):
+        x = acj.nextPair();
+        err = errBase/np.abs(x[0]-x[1])
+        if random.random()<err:
+            res = x[0]<x[1]
+        else:
+            res = x[0]>x[1]
+        acj.comp(x[0], x[1], result = res)
+        with open(r"acj.pkl", "wb") as output_file:
+            pickle.dump(acj, output_file)
+        del(acj)
+        with open(r"acj.pkl", "rb") as input_file:
+            acj = pickle.load(input_file)
+
+    rank = acj.rankings()[1]
+    val = acj.rankings()[3]
+    acc = np.sum(np.abs(true-rank))/length
+    worst = np.max(np.abs(true-rank))
+    print(rank)
+    print(acj.reliability())
+    print(acc)
+    print(worst)
+
+'''    for _ in range(rounds):
         print("----------------")
         for x in acj.nextRound():
             #print("%d vs %d" %(x[0], x[1]))
@@ -209,11 +249,23 @@ if __name__ == "__main__":
             acj.comp(x[0], x[1], result = res)
         print(acj.reliability())
 
-    rank = acj.rankings()[1]
-    val = acj.rankings()[3]
-    acc = np.sum(np.abs(true-rank))/length
-    worst = np.max(np.abs(true-rank))
-    print(rank)
-    print(acj.reliability())
-    print(acc)
-    print(worst)
+    with open(r"acj.pkl", "wb") as output_file:
+        pickle.dump(acj, output_file)
+
+    del(acj)
+
+    with open(r"acj.pkl", "rb") as input_file:
+        acj1 = pickle.load(input_file)
+
+    for _ in range(rounds):
+        print("----------------")
+        for x in acj1.nextRound():
+            #print("%d vs %d" %(x[0], x[1]))
+            err = errBase/np.abs(x[0]-x[1])
+            if random.random()<err:
+                res = x[0]<x[1]
+            else:
+                res = x[0]>x[1]
+            acj1.comp(x[0], x[1], result = res)
+        print(acj1.reliability())
+'''
