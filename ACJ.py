@@ -21,6 +21,7 @@ class ACJ(object):
         self.roundList = []
         self.step = -1
         self.decay = 1
+        self.returned = []
 
     def nextRound(self):
         '''Returns next round of pairs'''
@@ -32,6 +33,7 @@ class ACJ(object):
             if self.round > 1:
                 self.updateAll()
             self.roundList = self.infoPairs()
+            self.returned = [False for i in range(len(self.roundList))]
         return self.roundList
 
     def polittNextRound(self):
@@ -60,11 +62,16 @@ class ACJ(object):
         '''Returns next pair'''
         self.step = self.step + 1
         if self.step >= len(self.roundList):
-            self.nextRound()
-            #self.polittNextRound()
-            if self.roundList == None or self.roundList == []:
-                return None
-            self.step = 0
+            if all(self.returned):
+                self.nextRound()
+                #self.polittNextRound()
+                if self.roundList == None or self.roundList == []:
+                    return None
+                self.step = 0
+            else:
+                o = [p for p in self.roundList if not self.returned[self.roundList.index(p)]]
+                print(o)
+                return random.choice(o)
 
         return self.roundList[self.step]
 
@@ -241,8 +248,14 @@ class ACJ(object):
         return (G**2)/(1+(G**2))
 
 
-    def comp(self, a, b, result = True, update=None):
+    def comp(self, pair, result = True, update=None):
         '''Adds in a result between a and b where true is a wins and False is b wins'''
+        if pair in self.roundList:
+            self.returned[self.roundList.index(pair)] = True
+        else:
+            print("Not from this round")
+        a = pair[0]
+        b = pair[1]
         if update == None:
             update = self.update
         iA = np.where(self.dat[1]==a)[0][0]
@@ -267,21 +280,24 @@ class ACJ(object):
             return self.dat[:,np.argsort(self.dat[2])]
 
 if __name__ == "__main__":
+
     np.set_printoptions(precision=2)
     rounds = 16
     length = 100
     errBase = 0.5
     judges = 3
-    true = np.asarray([i+1.11 for i in range(length)])
+    true = np.asarray([i+1 for i in range(length)])
     dat = true[:]
     #np.random.shuffle(dat)
     acj = ACJ(dat, rounds)
+    i = 0
     with open(r"acj.pkl", "wb") as output_file:
         pickle.dump(acj, output_file)
     del(acj)
     with open(r"acj.pkl", "rb") as input_file:
         acj = pickle.load(input_file)
     while (True):
+        i = i+1
         if (acj.step == 0):
             print(acj.reliability())
         x = acj.nextPair();
@@ -292,7 +308,8 @@ if __name__ == "__main__":
             res = x[0]<x[1]
         else:
             res = x[0]>x[1]
-        acj.comp(x[0], x[1], result = res)
+
+        acj.comp(x, result = res)
         #with open(r"acj.pkl", "wb") as output_file:
         #    pickle.dump(acj, output_file)
         #del(acj)
