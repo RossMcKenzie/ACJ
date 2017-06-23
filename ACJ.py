@@ -5,42 +5,55 @@ import pickle
 class ACJ(object):
     '''Base object to hold comparison data and run algorithm
         script is used to refer to anything that is being ranked with ACJ
-        Dat is an array to hold the scripts with rows being [id, script, score, quality]
+        Dat is an array to hold the scripts with rows being [id, script, score, quality, trials]
         Track is an array with each value representing number of times a winner (dim 0) has beaten the loser (dim 1)
     '''
-    def __init__(self, data, initVal = 0, swis = 5):
+    def __init__(self, data, maxRounds):
         self.round = 0
+        self.maxRounds = maxRounds
         self.update = False
-        self.dat = np.zeros((4, len(data)))
+        self.dat = np.zeros((5, len(data)))
         self.dat[0] = np.asarray(range(len(data)))
         self.dat[1] = np.asarray(data)
-        self.dat[3, :] = initVal
         self.track = np.zeros((len(data), len(data)))
         self.n = len(data)
-        self.swis = swis
+        self.swis = 5
         self.roundList = []
         self.step = -1
+        self.decay = 1
 
     def nextRound(self):
         '''Returns next round of pairs'''
         self.round = self.round+1
-        if self.round<2:
-            self.updateAll()
+        if self.round > self.maxRounds:
+            self.roundList = None
+        else:
+            print(self.round)
+            if self.round > 1:
+                self.updateAll()
+            self.roundList = self.infoPairs()
+        return self.roundList
+
+    def polittNextRound(self):
+        self.round = self.round+1
+        print(self.round)
+        print(self.maxRounds)
+        if self.round > self.maxRounds:
+            self.roundList = None
+        elif self.round<2:
             print("rand")
             self.roundList = self.randomPairs()
-            return self.roundList
         elif self.round<2+self.swis:
             self.updateAll()
             print("swis")
             self.roundList = self.scorePairs()
-            return self.roundList
         else:
             print("val")
             #if self.round == 1+swis:
                 #self.dat[3] = (1/self.dat[1].size)*self.dat[2][:]
             self.updateAll()
             self.roundList = self.valuePairs()
-            return self.roundList
+        return self.roundList
             #return self.scorePairs()
 
     def nextPair(self):
@@ -48,16 +61,50 @@ class ACJ(object):
         self.step = self.step + 1
         if self.step >= len(self.roundList):
             self.nextRound()
+            #self.polittNextRound()
+            if self.roundList == None or self.roundList == []:
+                return None
             self.step = 0
 
         return self.roundList[self.step]
 
 
     def prob(self, iA):
-        '''Retunrs numpy array of the probability of A beating other values
+        '''Returns a numpy array of the probability of A beating other values
         Based on the Bradley-Terry-Luce model (Bradley and Terry 1952; Luce 1959)'''
         probs = np.exp(self.dat[3][iA]-self.dat[3])/(1+np.exp(self.dat[3][iA]-self.dat[3]))
         return probs
+
+    def fullProb(self):
+        '''Returns a 2D array of all probabilities of x beating y'''
+        pr = np.zeros((self.n, self.n))
+        for i in range(self.n):
+            pr[i] =  self.dat[3][i]
+        return np.exp(pr-self.dat[3])/(1+np.exp(pr-self.dat[3]))
+
+    def fisher(self):
+        '''returns fisher info array'''
+        prob = self.fullProb()
+        return ((prob**2)*(1-prob)**2)+((prob.T**2)*(1-prob.T)**2)
+
+    def selectionArray(self):
+        '''Returns a selection array based on Progressive Adaptive Comparitive Judgement
+        Politt(2012) + Barrada, Olea, Ponsoda, and Abad (2010)'''
+        F = self.fisher()*np.logical_not(np.identity(self.n))
+        ran = np.random.rand(self.n, self.n)*np.max(F)
+        a = 0
+        b = 0
+        #Create array from fisher mixed with noise
+        for i in range(1, self.round+1):
+            a = a + (i-1)**self.decay
+        for i in range(1, self.maxRounds+1):
+            b = b + (i-1)**self.decay
+        W = a/b
+        print(str(W)+"______________________")
+        S = ((1-W)*ran)+(W*F)
+        #Remove i=j and already compared scripts
+        return S*np.logical_not(np.identity(self.n))*np.logical_not(self.track+self.track.T)
+
 
     def updateValue(self, iA):
         '''Updates the value of script A using Newton's Method'''
@@ -136,7 +183,7 @@ class ACJ(object):
         return pairs
 
     def valuePairs(self):
-        '''Returns pairs matched by close values'''
+        '''Returns pairs matched by close values Politt(2012)'''
         shuf = np.array(self.dat, copy=True)
         np.random.shuffle(shuf.T)
         shuf.T
@@ -157,15 +204,29 @@ class ACJ(object):
                     j = j+1
                 if j == shuf[0].size:
                     i = i+1
-
+        print("Bye")
         return pairs
+
+    def infoPairs(self):
+        '''Returns pairs based on selection array from Progressive Adaptive Comparitive Judgement
+        Politt(2012) + Barrada, Olea, Ponsoda, and Abad (2010)'''
+        pairs = []
+        #Create
+        sA = self.selectionArray()
+        while(np.max(sA)>0):
+            iA, iB = np.unravel_index(sA.argmax(), sA.shape)
+            pairs.append([self.dat[1][iA], self.dat[1][iB]])
+            sA[iA][:] = 0
+            sA[iB][:] = 0
+            sA[:][iA] = 0
+            sA[:][iB] = 0
+        return pairs
+
+
 
     def rmse(self):
         '''Calculate rmse'''
-        pr = np.zeros((self.n, self.n))
-        for i in range(self.n):
-            pr[i] =  self.dat[3][i]
-        prob = np.exp(pr-self.dat[3])/(1+np.exp(pr-self.dat[3]))
+        prob = self.fullProb()
         y = 1/np.sqrt(np.sum(prob*(1-prob), axis=1)-0.25)
         return np.sqrt(np.mean(np.square(y)))
 
@@ -194,6 +255,8 @@ class ACJ(object):
             self.track[iB][iA] = 1
         self.dat[2][iA] = np.sum(self.track[iA])
         self.dat[2][iB] = np.sum(self.track[iB])
+        self.dat[4][iA] = self.dat[4][iA]+1
+        self.dat[4][iB] = self.dat[4][iB]+1
 
     def rankings(self, value=True):
         '''Returns current rankings
@@ -204,29 +267,40 @@ class ACJ(object):
             return self.dat[:,np.argsort(self.dat[2])]
 
 if __name__ == "__main__":
-    swis = 5
-    rounds = 10
+    np.set_printoptions(precision=2)
+    rounds = 16
     length = 100
-    errBase = 0.4
+    errBase = 0.5
     judges = 3
-    true = np.asarray([i+1 for i in range(length)])
+    true = np.asarray([i+1.11 for i in range(length)])
     dat = true[:]
     #np.random.shuffle(dat)
-    acj = ACJ(dat, swis=swis, initVal=0)
-
-    while (acj.round < rounds):
+    acj = ACJ(dat, rounds)
+    with open(r"acj.pkl", "wb") as output_file:
+        pickle.dump(acj, output_file)
+    del(acj)
+    with open(r"acj.pkl", "rb") as input_file:
+        acj = pickle.load(input_file)
+    while (True):
+        if (acj.step == 0):
+            print(acj.reliability())
         x = acj.nextPair();
+        if (x == None):
+            break
         err = errBase/np.abs(x[0]-x[1])
         if random.random()<err:
             res = x[0]<x[1]
         else:
             res = x[0]>x[1]
         acj.comp(x[0], x[1], result = res)
-        with open(r"acj.pkl", "wb") as output_file:
-            pickle.dump(acj, output_file)
-        del(acj)
-        with open(r"acj.pkl", "rb") as input_file:
-            acj = pickle.load(input_file)
+        #with open(r"acj.pkl", "wb") as output_file:
+        #    pickle.dump(acj, output_file)
+        #del(acj)
+        #with open(r"acj.pkl", "rb") as input_file:
+        #    acj = pickle.load(input_file)
+
+    diff = (acj.rankings()[3]-acj.rankings()[3].min())*100/(acj.rankings()[3].max()-acj.rankings()[3].min())
+    print(diff)
 
     rank = acj.rankings()[1]
     val = acj.rankings()[3]
@@ -236,36 +310,3 @@ if __name__ == "__main__":
     print(acj.reliability())
     print(acc)
     print(worst)
-
-'''    for _ in range(rounds):
-        print("----------------")
-        for x in acj.nextRound():
-            #print("%d vs %d" %(x[0], x[1]))
-            err = errBase/np.abs(x[0]-x[1])
-            if random.random()<err:
-                res = x[0]<x[1]
-            else:
-                res = x[0]>x[1]
-            acj.comp(x[0], x[1], result = res)
-        print(acj.reliability())
-
-    with open(r"acj.pkl", "wb") as output_file:
-        pickle.dump(acj, output_file)
-
-    del(acj)
-
-    with open(r"acj.pkl", "rb") as input_file:
-        acj1 = pickle.load(input_file)
-
-    for _ in range(rounds):
-        print("----------------")
-        for x in acj1.nextRound():
-            #print("%d vs %d" %(x[0], x[1]))
-            err = errBase/np.abs(x[0]-x[1])
-            if random.random()<err:
-                res = x[0]<x[1]
-            else:
-                res = x[0]>x[1]
-            acj1.comp(x[0], x[1], result = res)
-        print(acj1.reliability())
-'''
