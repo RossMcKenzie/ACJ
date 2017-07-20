@@ -1,6 +1,8 @@
 import random
+import os
 import numpy as np
 import pickle
+import datetime
 
 class ACJ(object):
     '''Base object to hold comparison data and run algorithm
@@ -8,7 +10,7 @@ class ACJ(object):
         Dat is an array to hold the scripts with rows being [id, script, score, quality, trials]
         Track is an array with each value representing number of times a winner (dim 0) has beaten the loser (dim 1)
     '''
-    def __init__(self, data, maxRounds):
+    def __init__(self, data, maxRounds, logPath = None):
         self.round = 0
         self.maxRounds = maxRounds
         self.update = False
@@ -22,6 +24,7 @@ class ACJ(object):
         self.step = -1
         self.decay = 1
         self.returned = []
+        self.logPath = logPath
 
     def nextRound(self):
         '''Returns next round of pairs'''
@@ -248,7 +251,7 @@ class ACJ(object):
         return (G**2)/(1+(G**2))
 
 
-    def comp(self, pair, result = True, update=None):
+    def comp(self, pair, result = True, update = None, reviewer = ''):
         '''Adds in a result between a and b where true is a wins and False is b wins'''
         if pair in self.roundList:
             self.returned[self.roundList.index(pair)] = True
@@ -270,6 +273,18 @@ class ACJ(object):
         self.dat[2][iB] = np.sum(self.track[iB])
         self.dat[4][iA] = self.dat[4][iA]+1
         self.dat[4][iB] = self.dat[4][iB]+1
+        if self.logPath != None:
+            self.log(self.logPath, pair, result, reviewer)
+
+    def log(self, path, pair, results, reviewer = ''):
+        '''Writes out a log of a comparison'''
+        timestamp = datetime.datetime.now().strftime('_%Y_%m_%d_%H_%M_%S_%f')
+        with open(path+os.sep+str(reviewer)+timestamp+".log", 'w+') as file:
+            file.write("Reviewer:%s\n" % str(reviewer))
+            file.write("A:%s\n" % str(pair[0]))
+            file.write("B:%s\n" % str(pair[1]))
+            file.write("Winner:%s\n" %("A" if results else "B"))
+
 
     def rankings(self, value=True):
         '''Returns current rankings
@@ -289,8 +304,9 @@ if __name__ == "__main__":
     true = np.asarray([i+1 for i in range(length)])
     dat = true[:]
     #np.random.shuffle(dat)
-    acj = ACJ(dat, rounds)
+    acj = ACJ(dat, rounds, logPath = "TestLogs")
     i = 0
+    reviewer = "Me"
     with open(r"acj.pkl", "wb") as output_file:
         pickle.dump(acj, output_file)
     del(acj)
@@ -309,7 +325,7 @@ if __name__ == "__main__":
         else:
             res = x[0]>x[1]
 
-        acj.comp(x, result = res)
+        acj.comp(x, result = res, reviewer = reviewer)
         #with open(r"acj.pkl", "wb") as output_file:
         #    pickle.dump(acj, output_file)
         #del(acj)
