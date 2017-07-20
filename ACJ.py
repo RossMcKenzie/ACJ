@@ -4,6 +4,38 @@ import numpy as np
 import pickle
 import datetime
 
+class MultiACJ(object):
+    '''Holds multiple ACJ objects for running comparisons with multiple choices'''
+    def __init__(self, data, maxRounds, noOfChoices, logPath = None):
+        self.acjs = [ACJ(data, maxRounds) for _ in range(noOfChoices)]
+
+    def valuePairs(self):
+        '''Returns pairs matched by close values Politt(2012)'''
+        shuf = np.array(self.dat, copy=True)
+        np.random.shuffle(shuf.T)
+        shuf.T
+        pairs = []
+        i = 0
+        while i<shuf[0].size-1:
+            aID = shuf[0][i]
+            newShuf = shuf[:, np.argsort(np.abs(shuf[3] - shuf[3][i]))]
+            j = 0
+            while j<newShuf[0].size:
+                bID = newShuf[0][j]
+                if (self.track[aID][bID]+self.track[bID][aID])==0 and shuf[1][i]!=newShuf[1][j]:
+                    pairs.append([shuf[1][i], newShuf[1][j]])
+                    iJ = np.where(shuf[0]==newShuf[0][j])[0][0]
+                    shuf = np.delete(shuf, [i, iJ], 1)
+                    break
+                else:
+                    j = j+1
+                if j == shuf[0].size:
+                    i = i+1
+        print("Bye")
+        return pairs
+
+    def nextPair(self):
+
 class ACJ(object):
     '''Base object to hold comparison data and run algorithm
         script is used to refer to anything that is being ranked with ACJ
@@ -14,6 +46,7 @@ class ACJ(object):
         self.round = 0
         self.maxRounds = maxRounds
         self.update = False
+        self.data = data
         self.dat = np.zeros((5, len(data)))
         self.dat[0] = np.asarray(range(len(data)))
         self.dat[1] = np.asarray(data)
