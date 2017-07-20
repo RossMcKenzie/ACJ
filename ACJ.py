@@ -48,8 +48,12 @@ class ACJ(object):
         self.update = False
         self.data = data
         self.dat = np.zeros((5, len(data)))
+	self.data = np.asarray(data)
         self.dat[0] = np.asarray(range(len(data)))
-        self.dat[1] = np.asarray(data)
+        #self.dat[1] = np.asarray(data)
+	#self.dat[2] = np.zeros(len(data), dtype=float)
+	#self.dat[3] = np.zeros(len(data), dtype=float)
+	#self.dat[4] = np.zeros(len(data), dtype=float)
         self.track = np.zeros((len(data), len(data)))
         self.n = len(data)
         self.swis = 5
@@ -176,7 +180,7 @@ class ACJ(object):
     def randomPairs(self, dat = None):
         '''Returns a list of random pairs from dat'''
         if dat == None:
-            dat = self.dat[1]
+            dat = self.data
         shufDat = np.array(dat, copy=True)
         ranPairs = []
         while len(shufDat)>1:
@@ -202,7 +206,7 @@ class ACJ(object):
             aID = shuf[0][i]
             bID = shuf[0][i+1]
             if (self.track[aID][bID]+self.track[bID][aID])==0 and shuf[2][i]==shuf[2][i+1]:
-                pairs.append([shuf[1][i], shuf[1][i+1]])
+                pairs.append([self.data[shuf[0][i]], self.data[shuf[0][i+1]]])
                 shuf = np.delete(shuf, [i, i+1], 1)
             else:
                 i = i+1
@@ -215,7 +219,7 @@ class ACJ(object):
             while j<shuf[0].size:
                 bID = shuf[0][j]
                 if (self.track[aID][bID]+self.track[bID][aID])==0:
-                    pairs.append([shuf[1][i], shuf[1][j]])
+                    pairs.append([self.data[shuf[0][i]], self.data[shuf[0][j]]])
                     shuf = np.delete(shuf, [i, j], 1)
                     break
                 else:
@@ -238,8 +242,8 @@ class ACJ(object):
             j = 0
             while j<newShuf[0].size:
                 bID = newShuf[0][j]
-                if (self.track[aID][bID]+self.track[bID][aID])==0 and shuf[1][i]!=newShuf[1][j]:
-                    pairs.append([shuf[1][i], newShuf[1][j]])
+                if (self.track[aID][bID]+self.track[bID][aID])==0 and self.data[aID]!=self.data[bID]:
+                    pairs.append([self.data[shuf[0][i]], self.data[newShuf[0][j]]])
                     iJ = np.where(shuf[0]==newShuf[0][j])[0][0]
                     shuf = np.delete(shuf, [i, iJ], 1)
                     break
@@ -258,7 +262,7 @@ class ACJ(object):
         sA = self.selectionArray()
         while(np.max(sA)>0):
             iA, iB = np.unravel_index(sA.argmax(), sA.shape)
-            pairs.append([self.dat[1][iA], self.dat[1][iB]])
+            pairs.append([self.data[iA], self.data[iB]])
             sA[iA][:] = 0
             sA[iB][:] = 0
             sA[:][iA] = 0
@@ -294,8 +298,8 @@ class ACJ(object):
         b = pair[1]
         if update == None:
             update = self.update
-        iA = np.where(self.dat[1]==a)[0][0]
-        iB = np.where(self.dat[1]==b)[0][0]
+        iA = np.where(self.data==a)[0][0]
+        iB = np.where(self.data==b)[0][0]
         if result:
             self.track[iA][iB] = 1
             self.track[iB][iA] = 0
@@ -323,9 +327,9 @@ class ACJ(object):
         '''Returns current rankings
         Default is by value but score can be used'''
         if value:
-            return self.dat[:,np.argsort(self.dat[3])]
+            return [self.data[np.argsort(self.dat[3])], self.dat[3][np.argsort(self.dat[3])]]
         else:
-            return self.dat[:,np.argsort(self.dat[2])]
+            return self.data[np.argsort(self.dat[2])]
 
 if __name__ == "__main__":
 
@@ -365,11 +369,11 @@ if __name__ == "__main__":
         #with open(r"acj.pkl", "rb") as input_file:
         #    acj = pickle.load(input_file)
 
-    diff = (acj.rankings()[3]-acj.rankings()[3].min())*100/(acj.rankings()[3].max()-acj.rankings()[3].min())
+    diff = (acj.rankings()[1]-acj.rankings()[1].min())*100/(acj.rankings()[1].max()-acj.rankings()[1].min())
     print(diff)
 
-    rank = acj.rankings()[1]
-    val = acj.rankings()[3]
+    rank = acj.rankings()[0]
+    val = acj.rankings()[1]
     acc = np.sum(np.abs(true-rank))/length
     worst = np.max(np.abs(true-rank))
     print(rank)
