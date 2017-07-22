@@ -337,13 +337,6 @@ class UniACJ(object):
 
     def comp(self, pair, result = True, update = None, reviewer = ''):
         '''Adds in a result between a and b where true is a wins and False is b wins'''
-        print("-----")
-        print(self.roundList)
-        print("-----")
-        print(pair)
-        print("-----")
-        print (pair in self.roundList)
-        print("-----")
         if pair in self.roundList:
             self.returned[self.roundList.index(pair)] = True
         else:
@@ -352,8 +345,8 @@ class UniACJ(object):
         b = pair[1]
         if update == None:
             update = self.update
-        iA = np.where(self.data==a)[0]
-        iB = np.where(self.data==b)[0]
+        iA = np.where(self.data==a)[0][0]
+        iB = np.where(self.data==b)[0][0]
         if result:
             self.track[iA][iB] = 1
             self.track[iB][iA] = 0
@@ -381,6 +374,6 @@ class UniACJ(object):
         '''Returns current rankings
         Default is by value but score can be used'''
         if value:
-            return [self.data[np.argsort(self.dat[3])], self.dat[3][np.argsort(self.dat[3])]]
+            return [np.asarray(self.data)[np.argsort(self.dat[3])], self.dat[3][np.argsort(self.dat[3])]]
         else:
             return self.data[np.argsort(self.dat[2])]
