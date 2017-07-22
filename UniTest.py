@@ -12,7 +12,7 @@ if __name__ == "__main__":
     true = np.asarray([i+1 for i in range(length)])
     dat = true[:]
     np.random.shuffle(dat)
-    acj = ACJ(dat, rounds, logPath = "TestLogs")
+    acj = ACJ(dat, rounds)
     i = 0
     reviewer = "Me"
     with open(r"acj.pkl", "wb") as output_file:
