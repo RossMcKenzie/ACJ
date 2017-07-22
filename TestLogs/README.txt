@@ -1,1 +1,0 @@
-The test logs are saved to this folder but are ignored by the git

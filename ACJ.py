@@ -4,39 +4,82 @@ import numpy as np
 import pickle
 import datetime
 
-class MultiACJ(object):
-    '''Holds multiple ACJ objects for running comparisons with multiple choices'''
-    def __init__(self, data, maxRounds, noOfChoices, logPath = None):
-        self.acjs = [ACJ(data, maxRounds) for _ in range(noOfChoices)]
+def ACJ(data, maxRounds, noOfChoices = 1, logPath = None):
+    if noOfChoices < 2:
+        return UniACJ(data, maxRounds, logPath)
+    else:
+        return MultiACJ(data, maxRounds, noOfChoices, logPath)
 
-    def valuePairs(self):
-        '''Returns pairs matched by close values Politt(2012)'''
-        shuf = np.array(self.dat, copy=True)
-        np.random.shuffle(shuf.T)
-        shuf.T
+class MultiACJ(object):
+    '''Holds multiple ACJ objects for running comparisons with multiple choices.
+    The first element of the list of acj objects keeps track of the used pairs.'''
+    def __init__(self, data, maxRounds, noOfChoices, logPath = None):
+        self.data = list(data)
+        self.n = len(data)
+        self.round = 0
+        self.step = 0
+        self.noOfChoices = noOfChoices
+        self.acjs = [ACJ(data, maxRounds) for _ in range(noOfChoices)]
+        self.nextRound()
+
+    def infoPairs(self):
+        '''Returns pairs based on summed selection arrays from Progressive Adaptive Comparitive Judgement
+        Politt(2012) + Barrada, Olea, Ponsoda, and Abad (2010)'''
         pairs = []
-        i = 0
-        while i<shuf[0].size-1:
-            aID = shuf[0][i]
-            newShuf = shuf[:, np.argsort(np.abs(shuf[3] - shuf[3][i]))]
-            j = 0
-            while j<newShuf[0].size:
-                bID = newShuf[0][j]
-                if (self.track[aID][bID]+self.track[bID][aID])==0 and shuf[1][i]!=newShuf[1][j]:
-                    pairs.append([shuf[1][i], newShuf[1][j]])
-                    iJ = np.where(shuf[0]==newShuf[0][j])[0][0]
-                    shuf = np.delete(shuf, [i, iJ], 1)
-                    break
-                else:
-                    j = j+1
-                if j == shuf[0].size:
-                    i = i+1
-        print("Bye")
+        #Create
+        sA = np.zeros((self.n, self.n))
+        for acj in self.acjs:
+            sA = sA+acj.selectionArray()
+        while(np.max(sA)>0):
+            iA, iB = np.unravel_index(sA.argmax(), sA.shape)
+            pairs.append([self.data[iA], self.data[iB]])
+            sA[iA][:] = 0
+            sA[iB][:] = 0
+            sA[:][iA] = 0
+            sA[:][iB] = 0
         return pairs
 
-    def nextPair(self):
+    def nextRound(self):
+        '''Returns next round of pairs'''
+        roundList = self.infoPairs()
+        for acj in self.acjs:
+            acj.nextRound(roundList)
+            acj.step = 0
+        return self.acjs[0].roundList
 
-class ACJ(object):
+    def nextPair(self):
+        p = self.acjs[0].nextPair(startNext=False)
+        if p == -1:
+            self.nextRound()
+            p = self.acjs[0].nextPair(startNext=False)
+        self.step = self.acjs[0].step
+        return p
+
+    def comp(self, pair, result = [True], update = None, reviewer = ''):
+        '''Adds in a result between a and b where true is a wins and False is b wins'''
+        if self.noOfChoices != len(result):
+            raise StandardError('Results list needs to be noOfChoices in length')
+        for i in range(self.noOfChoices):
+            self.acjs[i].comp(pair, result[i])
+        #if self.logPath != None:
+        #    self.log(self.logPath, pair, result, reviewer)
+
+    def rankings(self, value=True):
+        '''Returns current rankings
+        Default is by value but score can be used'''
+        rank = []
+        for acj in self.acjs:
+            rank.append(acj.rankings(value))
+        return rank
+
+    def reliability(self):
+        '''Calculates reliability'''
+        rel = []
+        for acj in self.acjs:
+            rel.append(acj.reliability())
+        return rel
+
+class UniACJ(object):
     '''Base object to hold comparison data and run algorithm
         script is used to refer to anything that is being ranked with ACJ
         Dat is an array to hold the scripts with rows being [id, script, score, quality, trials]
@@ -46,9 +89,8 @@ class ACJ(object):
         self.round = 0
         self.maxRounds = maxRounds
         self.update = False
-        self.data = data
+        self.data = list(data)
         self.dat = np.zeros((5, len(data)))
-	self.data = np.asarray(data)
         self.dat[0] = np.asarray(range(len(data)))
         #self.dat[1] = np.asarray(data)
 	#self.dat[2] = np.zeros(len(data), dtype=float)
@@ -63,16 +105,20 @@ class ACJ(object):
         self.returned = []
         self.logPath = logPath
 
-    def nextRound(self):
+    def nextRound(self, extRoundList = None):
         '''Returns next round of pairs'''
         self.round = self.round+1
+        self.step = 0
         if self.round > self.maxRounds:
             self.roundList = None
         else:
             print(self.round)
             if self.round > 1:
                 self.updateAll()
-            self.roundList = self.infoPairs()
+            if extRoundList == None:
+                self.roundList = self.infoPairs()
+            else:
+                self.roundList = extRoundList
             self.returned = [False for i in range(len(self.roundList))]
         return self.roundList
 
@@ -98,16 +144,18 @@ class ACJ(object):
         return self.roundList
             #return self.scorePairs()
 
-    def nextPair(self):
-        '''Returns next pair'''
+    def nextPair(self, startNext = True):
+        '''Returns next pair. Will start new rounds automatically if startNext is true'''
         self.step = self.step + 1
         if self.step >= len(self.roundList):
             if all(self.returned):
-                self.nextRound()
-                #self.polittNextRound()
-                if self.roundList == None or self.roundList == []:
-                    return None
-                self.step = 0
+                if (startNext):
+                    self.nextRound()
+                    #self.polittNextRound()
+                    if self.roundList == None or self.roundList == []:
+                        return None
+                else:
+                    return -1
             else:
                 o = [p for p in self.roundList if not self.returned[self.roundList.index(p)]]
                 print(o)
@@ -231,7 +279,7 @@ class ACJ(object):
 
     def valuePairs(self):
         '''Returns pairs matched by close values Politt(2012)'''
-        shuf = np.array(self.dat, copy=True)
+        shuf = np.array(self.dat, copy=True)#Transpose to shuffle columns rather than rows
         np.random.shuffle(shuf.T)
         shuf.T
         pairs = []
@@ -251,7 +299,6 @@ class ACJ(object):
                     j = j+1
                 if j == shuf[0].size:
                     i = i+1
-        print("Bye")
         return pairs
 
     def infoPairs(self):
@@ -290,6 +337,13 @@ class ACJ(object):
 
     def comp(self, pair, result = True, update = None, reviewer = ''):
         '''Adds in a result between a and b where true is a wins and False is b wins'''
+        print("-----")
+        print(self.roundList)
+        print("-----")
+        print(pair)
+        print("-----")
+        print (pair in self.roundList)
+        print("-----")
         if pair in self.roundList:
             self.returned[self.roundList.index(pair)] = True
         else:
@@ -298,8 +352,8 @@ class ACJ(object):
         b = pair[1]
         if update == None:
             update = self.update
-        iA = np.where(self.data==a)[0][0]
-        iB = np.where(self.data==b)[0][0]
+        iA = np.where(self.data==a)[0]
+        iB = np.where(self.data==b)[0]
         if result:
             self.track[iA][iB] = 1
             self.track[iB][iA] = 0
@@ -330,53 +384,3 @@ class ACJ(object):
             return [self.data[np.argsort(self.dat[3])], self.dat[3][np.argsort(self.dat[3])]]
         else:
             return self.data[np.argsort(self.dat[2])]
-
-if __name__ == "__main__":
-
-    np.set_printoptions(precision=2)
-    rounds = 16
-    length = 100
-    errBase = 0.5
-    judges = 3
-    true = np.asarray([i+1 for i in range(length)])
-    dat = true[:]
-    #np.random.shuffle(dat)
-    acj = ACJ(dat, rounds, logPath = "TestLogs")
-    i = 0
-    reviewer = "Me"
-    with open(r"acj.pkl", "wb") as output_file:
-        pickle.dump(acj, output_file)
-    del(acj)
-    with open(r"acj.pkl", "rb") as input_file:
-        acj = pickle.load(input_file)
-    while (True):
-        i = i+1
-        if (acj.step == 0):
-            print(acj.reliability())
-        x = acj.nextPair();
-        if (x == None):
-            break
-        err = errBase/np.abs(x[0]-x[1])
-        if random.random()<err:
-            res = x[0]<x[1]
-        else:
-            res = x[0]>x[1]
-
-        acj.comp(x, result = res, reviewer = reviewer)
-        #with open(r"acj.pkl", "wb") as output_file:
-        #    pickle.dump(acj, output_file)
-        #del(acj)
-        #with open(r"acj.pkl", "rb") as input_file:
-        #    acj = pickle.load(input_file)
-
-    diff = (acj.rankings()[1]-acj.rankings()[1].min())*100/(acj.rankings()[1].max()-acj.rankings()[1].min())
-    print(diff)
-
-    rank = acj.rankings()[0]
-    val = acj.rankings()[1]
-    acc = np.sum(np.abs(true-rank))/length
-    worst = np.max(np.abs(true-rank))
-    print(rank)
-    print(acj.reliability())
-    print(acc)
-    print(worst)
