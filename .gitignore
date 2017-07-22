@@ -1,2 +1,4 @@
 *.pdf
 *.log
+*.pyc
+*.pkl
