@@ -24,7 +24,7 @@ if __name__ == "__main__":
         i = i+1
         if (acj.step == 0):
             print(acj.reliability())
-        x = acj.nextPair();
+        x = acj.nextPair()
         if (x == None):
             break
         err = errBase/np.abs(x[0]-x[1])
