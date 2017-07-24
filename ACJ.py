@@ -327,7 +327,9 @@ class UniACJ(object):
 
     def comp(self, pair, result = True, update = None, reviewer = ''):
         '''Adds in a result between a and b where true is a wins and False is b wins'''
-        if pair in self.roundList or pair[::-1] in self.roundList:
+        if pair[::-1] in self.roundList:
+            pair = pair[::-1]
+        if pair in self.roundList:
             self.returned[self.roundList.index(pair)] = True
         a = pair[0]
         b = pair[1]

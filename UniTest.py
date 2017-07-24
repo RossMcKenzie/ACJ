@@ -33,8 +33,8 @@ if __name__ == "__main__":
         else:
             res = x[0]>x[1]
         y = []
-        y.append(x[0])
         y.append(x[1])
+        y.append(x[0])
         acj.comp(y, result = res, reviewer = reviewer)
         #with open(r"acj.pkl", "wb") as output_file:
         #    pickle.dump(acj, output_file)
