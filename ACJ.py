@@ -1,3 +1,4 @@
+from __future__ import division
 import random
 import os
 import numpy as np
@@ -349,6 +350,9 @@ class UniACJ(object):
         self.dat[4][iB] = self.dat[4][iB]+1
         if self.logPath != None:
             self.log(self.logPath, pair, result, reviewer)
+
+    def percentReturned(self):
+        return (sum(self.returned)/len(self.returned))*100
 
     def log(self, path, pair, results, reviewer = ''):
         '''Writes out a log of a comparison'''
