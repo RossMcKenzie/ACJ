@@ -345,8 +345,8 @@ class UniACJ(object):
         b = pair[1]
         if update == None:
             update = self.update
-        iA = np.where(self.data==a)[0][0]
-        iB = np.where(self.data==b)[0][0]
+        iA = self.data.index(a)
+        iB = self.data.index(b)
         if result:
             self.track[iA][iB] = 1
             self.track[iB][iA] = 0
