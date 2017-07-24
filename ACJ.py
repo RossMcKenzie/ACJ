@@ -112,7 +112,7 @@ class UniACJ(object):
         if self.round > self.maxRounds:
             self.roundList = None
         else:
-            print(self.round)
+            #print(self.round)
             if self.round > 1:
                 self.updateAll()
             if extRoundList == None:
@@ -124,19 +124,14 @@ class UniACJ(object):
 
     def polittNextRound(self):
         self.round = self.round+1
-        print(self.round)
-        print(self.maxRounds)
         if self.round > self.maxRounds:
             self.roundList = None
         elif self.round<2:
-            print("rand")
             self.roundList = self.randomPairs()
         elif self.round<2+self.swis:
             self.updateAll()
-            print("swis")
             self.roundList = self.scorePairs()
         else:
-            print("val")
             #if self.round == 1+swis:
                 #self.dat[3] = (1/self.dat[1].size)*self.dat[2][:]
             self.updateAll()
@@ -158,7 +153,6 @@ class UniACJ(object):
                     return -1
             else:
                 o = [p for p in self.roundList if not self.returned[self.roundList.index(p)]]
-                print(o)
                 return random.choice(o)
 
         return self.roundList[self.step]
@@ -195,7 +189,6 @@ class UniACJ(object):
         for i in range(1, self.maxRounds+1):
             b = b + (i-1)**self.decay
         W = a/b
-        print(str(W)+"______________________")
         S = ((1-W)*ran)+(W*F)
         #Remove i=j and already compared scripts
         return S*np.logical_not(np.identity(self.n))*np.logical_not(self.track+self.track.T)
@@ -209,9 +202,6 @@ class UniACJ(object):
         x = np.sum(probA)-0.5#Subtract where i = a
         y = np.sum(probA*(1-probA))-0.25#Subtract where i = a
         if x == 0:
-            print("FAIl")
-            print(probA)
-            print(self.dat[3])
             exit()
         #print(self.dat[3])
         return self.dat[3][iA]+((self.dat[2][iA]-x)/y)
@@ -339,8 +329,6 @@ class UniACJ(object):
         '''Adds in a result between a and b where true is a wins and False is b wins'''
         if pair in self.roundList:
             self.returned[self.roundList.index(pair)] = True
-        else:
-            print("Not from this round")
         a = pair[0]
         b = pair[1]
         if update == None:

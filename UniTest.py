@@ -5,9 +5,9 @@ import random
 
 if __name__ == "__main__":
     np.set_printoptions(precision=2)
-    rounds = 16
+    rounds = 10
     length = 100
-    errBase = 0.5
+    errBase = 0.0
     judges = 3
     true = np.asarray([i+1 for i in range(length)])
     dat = true[:]
