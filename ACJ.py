@@ -330,6 +330,7 @@ class UniACJ(object):
         '''Adds in a result between a and b where true is a wins and False is b wins'''
         if pair[::-1] in self.roundList:
             pair = pair[::-1]
+	    result = not result
         if pair in self.roundList:
             self.returned[self.roundList.index(pair)] = True
         a = pair[0]
@@ -339,15 +340,15 @@ class UniACJ(object):
         iA = self.data.index(a)
         iB = self.data.index(b)
         if result:
-            self.track[iA][iB] = 1
-            self.track[iB][iA] = 0
+            self.track[iA,iB] = 1
+            self.track[iB,iA] = 0
         else:
-            self.track[iA][iB] = 0
-            self.track[iB][iA] = 1
-        self.dat[2][iA] = np.sum(self.track[iA])
-        self.dat[2][iB] = np.sum(self.track[iB])
-        self.dat[4][iA] = self.dat[4][iA]+1
-        self.dat[4][iB] = self.dat[4][iB]+1
+            self.track[iA,iB] = 0
+            self.track[iB,iA] = 1
+        self.dat[2,iA] = np.sum(self.track[iA,:])
+        self.dat[2,iB] = np.sum(self.track[iB,:])
+        self.dat[4,iA] = self.dat[4][iA]+1
+        self.dat[4,iB] = self.dat[4][iB]+1
         if self.logPath != None:
             self.log(self.logPath, pair, result, reviewer)
 

@@ -5,7 +5,7 @@ import random
 
 if __name__ == "__main__":
     np.set_printoptions(precision=2)
-    rounds = 10
+    rounds = 15
     length = 100
     errBase = 0.0
     judges = 3
@@ -30,12 +30,13 @@ if __name__ == "__main__":
         err = errBase/np.abs(x[0]-x[1])
         if random.random()<err:
             res = x[0]<x[1]
+	    print("hi")
         else:
             res = x[0]>x[1]
         y = []
         y.append(x[1])
         y.append(x[0])
-        acj.comp(y, result = res, reviewer = reviewer)
+        acj.comp(y, result = not res, reviewer = reviewer)
         #with open(r"acj.pkl", "wb") as output_file:
         #    pickle.dump(acj, output_file)
         #del(acj)
