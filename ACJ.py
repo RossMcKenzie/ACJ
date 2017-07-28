@@ -22,6 +22,7 @@ class MultiACJ(object):
         self.noOfChoices = noOfChoices
         self.acjs = [ACJ(data, maxRounds) for _ in range(noOfChoices)]
         self.nextRound()
+        self.logPath = logPath
 
     def infoPairs(self):
         '''Returns pairs based on summed selection arrays from Progressive Adaptive Comparitive Judgement
@@ -43,6 +44,7 @@ class MultiACJ(object):
     def nextRound(self):
         '''Returns next round of pairs'''
         roundList = self.infoPairs()
+        print(roundList)
         for acj in self.acjs:
             acj.nextRound(roundList)
             acj.step = 0
@@ -51,8 +53,10 @@ class MultiACJ(object):
     def nextPair(self):
         p = self.acjs[0].nextPair(startNext=False)
         if p == -1:
-            self.nextRound()
-            p = self.acjs[0].nextPair(startNext=False)
+            if self.nextRound() != None:
+                p = self.acjs[0].nextPair(startNext=False)
+            else:
+                return None
         self.step = self.acjs[0].step
         return p
 
@@ -62,8 +66,8 @@ class MultiACJ(object):
             raise StandardError('Results list needs to be noOfChoices in length')
         for i in range(self.noOfChoices):
             self.acjs[i].comp(pair, result[i])
-        #if self.logPath != None:
-        #    self.log(self.logPath, pair, result, reviewer)
+        if self.logPath != None:
+            self.log(self.logPath, pair, result, reviewer)
 
     def rankings(self, value=True):
         '''Returns current rankings
@@ -79,6 +83,16 @@ class MultiACJ(object):
         for acj in self.acjs:
             rel.append(acj.reliability())
         return rel
+
+    def log(self, path, pair, result, reviewer = ''):
+        '''Writes out a log of a comparison'''
+        timestamp = datetime.datetime.now().strftime('_%Y_%m_%d_%H_%M_%S_%f')
+        with open(path+os.sep+str(reviewer)+timestamp+".log", 'w+') as file:
+            file.write("Reviewer:%s\n" % str(reviewer))
+            file.write("A:%s\n" % str(pair[0]))
+            file.write("B:%s\n" % str(pair[1]))
+            for i in range(len(result)):
+                file.write("Winner %d:%s\n" %(i, "A" if result[i] else "B"))
 
 class UniACJ(object):
     '''Base object to hold comparison data and run algorithm
@@ -330,7 +344,7 @@ class UniACJ(object):
         '''Adds in a result between a and b where true is a wins and False is b wins'''
         if pair[::-1] in self.roundList:
             pair = pair[::-1]
-	    result = not result
+            result = not result
         if pair in self.roundList:
             self.returned[self.roundList.index(pair)] = True
         a = pair[0]
@@ -355,14 +369,14 @@ class UniACJ(object):
     def percentReturned(self):
         return (sum(self.returned)/len(self.returned))*100
 
-    def log(self, path, pair, results, reviewer = ''):
+    def log(self, path, pair, result, reviewer = ''):
         '''Writes out a log of a comparison'''
         timestamp = datetime.datetime.now().strftime('_%Y_%m_%d_%H_%M_%S_%f')
         with open(path+os.sep+str(reviewer)+timestamp+".log", 'w+') as file:
             file.write("Reviewer:%s\n" % str(reviewer))
             file.write("A:%s\n" % str(pair[0]))
             file.write("B:%s\n" % str(pair[1]))
-            file.write("Winner:%s\n" %("A" if results else "B"))
+            file.write("Winner:%s\n" %("A" if result else "B"))
 
 
     def rankings(self, value=True):

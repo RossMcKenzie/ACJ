@@ -5,8 +5,8 @@ import random
 
 if __name__ == "__main__":
     np.set_printoptions(precision=2)
-    rounds = 5
-    length = 10
+    rounds = 16
+    length = 100
     errBase = 0.5
     judges = 3
     true = [i+1 for i in range(length)]
@@ -44,11 +44,13 @@ if __name__ == "__main__":
         #del(acj)
         #with open(r"acj.pkl", "rb") as input_file:
         #    acj = pickle.load(input_file)
-
-    diff = (acj.rankings()[:][1]-acj.rankings()[:][1].min())*100/(acj.rankings()[:][1].max()-acj.rankings()[:][1].min())
+    diff = []
+    rank = []
+    for r in acj.rankings():
+        diff.append((r[1]-r[1].min())*100/(r[1].max()-r[1].min()))
+        rank.append(r[0])
     print(diff)
 
-    rank = acj.rankings()[:][0]
     val = acj.rankings()[:][1]
     #acc = np.sum(np.abs(true-rank))/length
     #worst = np.max(np.abs(true-rank))
