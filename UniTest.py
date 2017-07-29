@@ -30,7 +30,6 @@ if __name__ == "__main__":
         err = errBase/np.abs(x[0]-x[1])
         if random.random()<err:
             res = x[0]<x[1]
-	    print("hi")
         else:
             res = x[0]>x[1]
         y = []
