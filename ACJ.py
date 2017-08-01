@@ -5,7 +5,7 @@ import numpy as np
 import pickle
 import datetime
 
-def ACJ(data, maxRounds, noOfChoices = 1, logPath = None):
+def ACJ(data, maxRounds, noOfChoices = 1, logPath = None, optionNames = None):
     if noOfChoices < 2:
         return UniACJ(data, maxRounds, logPath)
     else:
@@ -14,15 +14,19 @@ def ACJ(data, maxRounds, noOfChoices = 1, logPath = None):
 class MultiACJ(object):
     '''Holds multiple ACJ objects for running comparisons with multiple choices.
     The first element of the list of acj objects keeps track of the used pairs.'''
-    def __init__(self, data, maxRounds, noOfChoices, logPath = None):
+    def __init__(self, data, maxRounds, noOfChoices, logPath = None, optionNames = None):
         self.data = list(data)
         self.n = len(data)
         self.round = 0
         self.step = 0
         self.noOfChoices = noOfChoices
         self.acjs = [ACJ(data, maxRounds) for _ in range(noOfChoices)]
-        self.nextRound()
         self.logPath = logPath
+	if optionNames == None:
+		self.optionNames = [str(i) for i in range(noOfChoices)]
+	else:
+		self.optionNames = optionNames
+        self.nextRound()
 
     def infoPairs(self):
         '''Returns pairs based on summed selection arrays from Progressive Adaptive Comparitive Judgement
@@ -92,7 +96,7 @@ class MultiACJ(object):
             file.write("A:%s\n" % str(pair[0]))
             file.write("B:%s\n" % str(pair[1]))
             for i in range(len(result)):
-                file.write("Winner %d:%s\n" %(i, "A" if result[i] else "B"))
+                file.write("Winner of %s:%s\n" %(self.optionNames[i], "A" if result[i] else "B"))
 
 class UniACJ(object):
     '''Base object to hold comparison data and run algorithm
