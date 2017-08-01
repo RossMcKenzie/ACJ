@@ -9,7 +9,7 @@ def ACJ(data, maxRounds, noOfChoices = 1, logPath = None, optionNames = None):
     if noOfChoices < 2:
         return UniACJ(data, maxRounds, logPath)
     else:
-        return MultiACJ(data, maxRounds, noOfChoices, logPath)
+        return MultiACJ(data, maxRounds, noOfChoices, logPath, optionNames)
 
 class MultiACJ(object):
     '''Holds multiple ACJ objects for running comparisons with multiple choices.
