@@ -64,8 +64,10 @@ class MultiACJ(object):
         self.step = self.acjs[0].step
         return p
 
-    def comp(self, pair, result = [True], update = None, reviewer = ''):
+    def comp(self, pair, result = None, update = None, reviewer = ''):
         '''Adds in a result between a and b where true is a wins and False is b wins'''
+        if result == None:
+            result = [True for _ in range(self.noOfChoices)]
         if self.noOfChoices != len(result):
             raise StandardError('Results list needs to be noOfChoices in length')
         for i in range(self.noOfChoices):
