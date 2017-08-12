@@ -47,10 +47,10 @@ class MultiACJ(object):
         while(np.max(sA)>0):
             iA, iB = np.unravel_index(sA.argmax(), sA.shape)
             pairs.append([self.data[iA], self.data[iB]])
-            sA[iA][:] = 0
-            sA[iB][:] = 0
-            sA[:][iA] = 0
-            sA[:][iB] = 0
+            sA[iA,:] = 0
+            sA[iB,:] = 0
+            sA[:,iA] = 0
+            sA[:,iB] = 0
         return pairs
 
     def nextRound(self):

@@ -6,7 +6,7 @@ import random
 if __name__ == "__main__":
     np.set_printoptions(precision=2)
     rounds = 15
-    length = 100
+    length = 10
     errBase = 0.0
     judges = 3
     true = np.asarray([i+1 for i in range(length)])
@@ -26,6 +26,8 @@ if __name__ == "__main__":
         if (acj.step == 0):
             print(acj.reliability())
         j = acj.nextIDPair()
+        print(acj.roundList)
+        exit()
         if (j == None):
             break
         x = [acj.getScript(k) for k in j]
