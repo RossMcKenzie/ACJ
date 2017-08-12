@@ -130,6 +130,13 @@ class MultiACJ(object):
     def percentReturned(self):
         return self.acjs[0].percentReturned()
 
+    def results(self):
+        '''Prints a list of scripts and thier value scaled between 0 and 100'''
+        rank = []
+        for r in self.rankings():
+                rank.append(list(zip(r[0], (r[1]-r[1].min())*100/(r[1].max()-r[1].min()))))
+        return rank
+
 class UniACJ(object):
     '''Base object to hold comparison data and run algorithm
         script is used to refer to anything that is being ranked with ACJ
@@ -448,3 +455,9 @@ class UniACJ(object):
             return [np.asarray(self.data)[np.argsort(self.dat[3])], self.dat[3][np.argsort(self.dat[3])]]
         else:
             return self.data[np.argsort(self.dat[2])]
+
+    def results(self):
+        '''Prints a list of scripts and thier value scaled between 0 and 100'''
+        r = self.rankings()
+        rank = list(zip(r[0], (r[1]-r[1].min())*100/(r[1].max()-r[1].min())))
+        return [rank]

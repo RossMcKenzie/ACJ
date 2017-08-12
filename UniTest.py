@@ -46,12 +46,10 @@ if __name__ == "__main__":
 
     diff = (acj.rankings()[1]-acj.rankings()[1].min())*100/(acj.rankings()[1].max()-acj.rankings()[1].min())
     print(diff)
-
-    rank = acj.rankings()[0]
     val = acj.rankings()[1]
-    acc = np.sum(np.abs(true-rank))/length
-    worst = np.max(np.abs(true-rank))
-    print(rank)
+    #acc = np.sum(np.abs(true-rank))/length
+    #worst = np.max(np.abs(true-rank))
+    print(acj.results())
     print(acj.reliability())
-    print(acc)
-    print(worst)
+    #print(acc)
+    #print(worst)

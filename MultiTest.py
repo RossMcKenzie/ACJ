@@ -46,17 +46,9 @@ if __name__ == "__main__":
         #del(acj)
         #with open(r"acj.pkl", "rb") as input_file:
         #    acj = pickle.load(input_file)
-    diff = []
-    rank = []
-    for r in acj.rankings():
-        diff.append((r[1]-r[1].min())*100/(r[1].max()-r[1].min()))
-        rank.append(r[0])
-    print(diff)
-
-    val = acj.rankings()[:][1]
     #acc = np.sum(np.abs(true-rank))/length
     #worst = np.max(np.abs(true-rank))
-    print(rank)
+    print(acj.results())
     print(acj.reliability())
     #print(acc)
     #print(worst)
