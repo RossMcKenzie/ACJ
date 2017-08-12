@@ -100,6 +100,9 @@ class MultiACJ(object):
             for i in range(len(result)):
                 file.write("Winner of %s:%s\n" %(self.optionNames[i], "A" if result[i] else "B"))
 
+    def percentReturned(self):
+        return self.acjs[0].percentReturned()
+
 class UniACJ(object):
     '''Base object to hold comparison data and run algorithm
         script is used to refer to anything that is being ranked with ACJ
@@ -373,6 +376,8 @@ class UniACJ(object):
             self.log(self.logPath, pair, result, reviewer)
 
     def percentReturned(self):
+        if len(self.returned) = 0:
+            return 0
         return (sum(self.returned)/len(self.returned))*100
 
     def log(self, path, pair, result, reviewer = ''):
