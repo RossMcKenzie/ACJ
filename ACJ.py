@@ -107,14 +107,14 @@ class MultiACJ(object):
         Default is by value but score can be used'''
         rank = []
         for acj in self.acjs:
-            rank.append(acj.rankings(value))
+            rank.append(acj.rankings(value)[0])
         return rank
 
     def reliability(self):
         '''Calculates reliability'''
         rel = []
         for acj in self.acjs:
-            rel.append(acj.reliability())
+            rel.append(acj.reliability()[0])
         return rel
 
     def log(self, path, pair, result, reviewer = ''):
@@ -399,7 +399,7 @@ class UniACJ(object):
     def reliability(self):
         '''Calculates reliability'''
         G = self.trueSD()/self.rmse()
-        return (G**2)/(1+(G**2))
+        return [(G**2)/(1+(G**2))]
 
 
     def comp(self, pair, result = True, update = None, reviewer = ''):
