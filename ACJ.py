@@ -7,7 +7,7 @@ import datetime
 
 def ACJ(data, maxRounds, noOfChoices = 1, logPath = None, optionNames = None):
     if noOfChoices < 2:
-        return UniACJ(data, maxRounds, logPath)
+        return UniACJ(data, maxRounds, logPath, optionNames)
     else:
         return MultiACJ(data, maxRounds, noOfChoices, logPath, optionNames)
 
@@ -143,7 +143,9 @@ class UniACJ(object):
         Dat is an array to hold the scripts with rows being [id, script, score, quality, trials]
         Track is an array with each value representing number of times a winner (dim 0) has beaten the loser (dim 1)
     '''
-    def __init__(self, data, maxRounds, logPath = None):
+    def __init__(self, data, maxRounds, logPath = None, optionNames = None):
+        self.optionNames = optionNames
+        self.noOfChoices = 1
         self.round = 0
         self.maxRounds = maxRounds
         self.update = False
