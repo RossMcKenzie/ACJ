@@ -56,7 +56,6 @@ class MultiACJ(object):
     def nextRound(self):
         '''Returns next round of pairs'''
         roundList = self.infoPairs()
-        print(roundList)
         for acj in self.acjs:
             acj.nextRound(roundList)
             acj.step = 0
