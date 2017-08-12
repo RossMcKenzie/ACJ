@@ -106,7 +106,7 @@ class MultiACJ(object):
         Default is by value but score can be used'''
         rank = []
         for acj in self.acjs:
-            rank.append(acj.rankings(value)[0])
+            rank.append(acj.rankings(value))
         return rank
 
     def reliability(self):
