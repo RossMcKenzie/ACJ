@@ -28,6 +28,14 @@ class MultiACJ(object):
             self.optionNames = optionNames
             self.nextRound()
 
+    def getScript(self, ID):
+        '''Gets script with ID'''
+        return self.acjs[0].getScript(ID)
+
+    def getID(self, script):
+        '''Gets ID of script'''
+        return self.acjs[0].getID(script)
+
     def infoPairs(self):
         '''Returns pairs based on summed selection arrays from Progressive Adaptive Comparitive Judgement
         Politt(2012) + Barrada, Olea, Ponsoda, and Abad (2010)'''
@@ -55,6 +63,7 @@ class MultiACJ(object):
         return self.acjs[0].roundList
 
     def nextPair(self):
+        '''gets next pair from main acj'''
         p = self.acjs[0].nextPair(startNext=False)
         if p == -1:
             if self.nextRound() != None:
@@ -63,6 +72,17 @@ class MultiACJ(object):
                 return None
         self.step = self.acjs[0].step
         return p
+
+    def nextIDPair(self):
+        '''Gets ID of next pair'''
+        pair = self.nextPair()
+        if pair == None:
+            return None
+        idPair = []
+        for p in pair:
+            idPair.append(self.getID(p))
+        return idPair
+
 
     def comp(self, pair, result = None, update = None, reviewer = ''):
         '''Adds in a result between a and b where true is a wins and False is b wins'''
@@ -74,6 +94,13 @@ class MultiACJ(object):
             self.acjs[i].comp(pair, result[i])
         if self.logPath != None:
             self.log(self.logPath, pair, result, reviewer)
+
+    def IDComp(self, idPair, result = None, update = None, reviewer = ''):
+        '''Adds in a result between a and b where true is a wins and False is b wins. Uses IDs'''
+        pair = []
+        for p in idPair:
+            pair.append(self.getScript(p))
+        self.comp(pair, result, update, reviewer)
 
     def rankings(self, value=True):
         '''Returns current rankings
@@ -163,6 +190,14 @@ class UniACJ(object):
         return self.roundList
             #return self.scorePairs()
 
+    def getID(self, script):
+        '''Gets ID of script'''
+        return self.data.index(script)
+
+    def getScript(self, ID):
+        '''Gets script with ID'''
+        return self.data[ID]
+
     def nextPair(self, startNext = True):
         '''Returns next pair. Will start new rounds automatically if startNext is true'''
         self.step = self.step + 1
@@ -181,6 +216,15 @@ class UniACJ(object):
 
         return self.roundList[self.step]
 
+    def nextIDPair(self, startNext = True):
+        '''Returns ID of next pair'''
+        pair = self.nextPair()
+        if pair == None:
+            return None
+        idPair = []
+        for p in pair:
+            idPair.append(self.getID(p))
+        return idPair
 
     def prob(self, iA):
         '''Returns a numpy array of the probability of A beating other values
@@ -374,6 +418,13 @@ class UniACJ(object):
         self.dat[4,iB] = self.dat[4][iB]+1
         if self.logPath != None:
             self.log(self.logPath, pair, result, reviewer)
+
+    def IDComp(self, idPair, result = True, update = None, reviewer = ''):
+        '''Adds in a result between a and b where true is a wins and False is b wins, Uses IDs'''
+        pair = []
+        for p in idPair:
+            pair.append(self.getScript(p))
+        self.comp(pair, result, update, reviewer)
 
     def percentReturned(self):
         if len(self.returned) == 0:

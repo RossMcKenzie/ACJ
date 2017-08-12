@@ -15,6 +15,7 @@ if __name__ == "__main__":
     acj = ACJ(dat, rounds)
     i = 0
     reviewer = "Me"
+
     with open(r"acj.pkl", "wb") as output_file:
         pickle.dump(acj, output_file)
     del(acj)
@@ -24,18 +25,19 @@ if __name__ == "__main__":
         i = i+1
         if (acj.step == 0):
             print(acj.reliability())
-        x = acj.nextPair()
-        if (x == None):
+        j = acj.nextIDPair()
+        if (j == None):
             break
+        x = [acj.getScript(k) for k in j]
+        #x = acj.nextPair()
+        #if (x == None):
+        #    break
         err = errBase/np.abs(x[0]-x[1])
         if random.random()<err:
             res = x[0]<x[1]
         else:
             res = x[0]>x[1]
-        y = []
-        y.append(x[1])
-        y.append(x[0])
-        acj.comp(y, result = not res, reviewer = reviewer)
+        acj.IDComp(j, result = res, reviewer = reviewer)
         #with open(r"acj.pkl", "wb") as output_file:
         #    pickle.dump(acj, output_file)
         #del(acj)

@@ -29,9 +29,10 @@ if __name__ == "__main__":
         i = i+1
         if (acj.step == 0):
             print(acj.reliability())
-        x = acj.nextPair();
-        if (x == None):
+        j = acj.nextIDPair();
+        if (j == None):
             break
+        x = [acj.getScript(l) for l in j]
         res = []
         for i in range(2):
             err = errBase/np.abs(x[0][i]-x[1][i])
@@ -39,7 +40,7 @@ if __name__ == "__main__":
                 res.append(x[0][i]<x[1][i])
             else:
                 res.append(x[0][i]>x[1][i])
-        acj.comp(x, result = res, reviewer = reviewer)
+        acj.IDComp(j, result = res, reviewer = reviewer)
         #with open(r"acj.pkl", "wb") as output_file:
         #    pickle.dump(acj, output_file)
         #del(acj)
