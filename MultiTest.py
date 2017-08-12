@@ -25,6 +25,7 @@ if __name__ == "__main__":
     with open(r"acj.pkl", "rb") as input_file:
         acj = pickle.load(input_file)
     while (True):
+        print(acj.percentReturned())
         i = i+1
         if (acj.step == 0):
             print(acj.reliability())

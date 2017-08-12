@@ -22,11 +22,11 @@ class MultiACJ(object):
         self.noOfChoices = noOfChoices
         self.acjs = [ACJ(data, maxRounds) for _ in range(noOfChoices)]
         self.logPath = logPath
-	if optionNames == None:
-		self.optionNames = [str(i) for i in range(noOfChoices)]
-	else:
-		self.optionNames = optionNames
-        self.nextRound()
+        if optionNames == None:
+            self.optionNames = [str(i) for i in range(noOfChoices)]
+        else:
+            self.optionNames = optionNames
+            self.nextRound()
 
     def infoPairs(self):
         '''Returns pairs based on summed selection arrays from Progressive Adaptive Comparitive Judgement
@@ -376,7 +376,7 @@ class UniACJ(object):
             self.log(self.logPath, pair, result, reviewer)
 
     def percentReturned(self):
-        if len(self.returned) = 0:
+        if len(self.returned) == 0:
             return 0
         return (sum(self.returned)/len(self.returned))*100
 
