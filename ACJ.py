@@ -5,6 +5,12 @@ import numpy as np
 import pickle
 import datetime
 
+class Decision(object):
+    def __init__(self, pair, result, reviewer):
+        self.pair = pair
+        self.result = result
+        self.reviewer = reviewer
+
 def ACJ(data, maxRounds, noOfChoices = 1, logPath = None, optionNames = None):
     if noOfChoices < 2:
         return UniACJ(data, maxRounds, logPath, optionNames)
@@ -59,6 +65,8 @@ class MultiACJ(object):
         for acj in self.acjs:
             acj.nextRound(roundList)
             acj.step = 0
+        self.round = self.acjs[0].round
+        self.step = self.acjs[0].step
         return self.acjs[0].roundList
 
     def nextPair(self):
@@ -83,7 +91,7 @@ class MultiACJ(object):
         return idPair
 
 
-    def comp(self, pair, result = None, update = None, reviewer = ''):
+    def comp(self, pair, result = None, update = None, reviewer = 'Unknown'):
         '''Adds in a result between a and b where true is a wins and False is b wins'''
         if result == None:
             result = [True for _ in range(self.noOfChoices)]
@@ -116,7 +124,7 @@ class MultiACJ(object):
             rel.append(acj.reliability()[0])
         return rel
 
-    def log(self, path, pair, result, reviewer = ''):
+    def log(self, path, pair, result, reviewer = 'Unknown'):
         '''Writes out a log of a comparison'''
         timestamp = datetime.datetime.now().strftime('_%Y_%m_%d_%H_%M_%S_%f')
         with open(path+os.sep+str(reviewer)+timestamp+".log", 'w+') as file:
@@ -141,8 +149,10 @@ class UniACJ(object):
         script is used to refer to anything that is being ranked with ACJ
         Dat is an array to hold the scripts with rows being [id, script, score, quality, trials]
         Track is an array with each value representing number of times a winner (dim 0) has beaten the loser (dim 1)
+        Decisions keeps track of all the descisions madein descision objects
     '''
     def __init__(self, data, maxRounds, logPath = None, optionNames = None):
+        self.reviewers = []
         self.optionNames = optionNames
         self.noOfChoices = 1
         self.round = 0
@@ -163,6 +173,7 @@ class UniACJ(object):
         self.decay = 1
         self.returned = []
         self.logPath = logPath
+        self.decisions = []
 
     def nextRound(self, extRoundList = None):
         '''Returns next round of pairs'''
@@ -233,6 +244,10 @@ class UniACJ(object):
         for p in pair:
             idPair.append(self.getID(p))
         return idPair
+
+    def singleProb(self, iA, iB):
+        prob = np.exp(self.dat[3][iA]-self.dat[3][iB])/(1+np.exp(self.dat[3][iA]-self.dat[3][iB]))
+        return prob
 
     def prob(self, iA):
         '''Returns a numpy array of the probability of A beating other values
@@ -382,8 +397,6 @@ class UniACJ(object):
             sA[:,iB] = 0
         return pairs
 
-
-
     def rmse(self):
         '''Calculate rmse'''
         prob = self.fullProb()
@@ -400,9 +413,56 @@ class UniACJ(object):
         G = self.trueSD()/self.rmse()
         return [(G**2)/(1+(G**2))]
 
+    def SR(self, pair, result):
+        '''Calculates the Squared Residual and weight of a decision'''
+        p = [self.getID(a) for a in pair]
+        if result:
+            prob = self.singleProb(p[0], p[1])
+        else:
+            prob = self.singleProb(p[1], p[0])
+        res = 1-prob
+        weight = prob*(1-prob)
 
-    def comp(self, pair, result = True, update = None, reviewer = ''):
+        SR = (res**2)
+        return SR, weight
+
+    def addDecision(self, pair, result, reviewer):
+        '''Adds an SSR to the SSR array'''
+        self.decisions.append(Decision(pair, result,reviewer))
+
+    def revID(self, reviewer):
+        return self.reviewers.index(reviewer)
+
+    def WMS(self, decisions = None):
+        '''Builds data lists:
+        [reviewer] [sum of SR, sum of weights]
+        and uses it to make [reviewer, WMS] list
+        WMS = Sum SR/Sum weights
+        also returns mean and std div'''
+        if decisions == None:
+            decisions = self.decisions
+        reviewers = []
+        SRs = []
+        weights = []
+        for dec in decisions:
+            if dec.reviewer not in reviewers:
+                reviewers.append(dec.reviewer)
+                SRs.append(0)
+                weights.append(0)
+            SR, weight = self.SR(dec.pair, dec.result)
+            revID = reviewers.index(dec.reviewer)
+            SRs[revID] = SRs[revID] + SR
+            weights[revID] = weights[revID] + weight
+
+        WMSs = []
+        for i in range(len(reviewers)):
+            WMS = SRs[i]/weights[i]
+            WMSs.append(WMS)
+        return list(zip(reviewers, WMSs)), np.mean(WMSs), np.std(WMSs)
+
+    def comp(self, pair, result = True, update = None, reviewer = 'Unknown'):
         '''Adds in a result between a and b where true is a wins and False is b wins'''
+        self.addDecision(pair, result, reviewer)
         if pair[::-1] in self.roundList:
             pair = pair[::-1]
             result = not result
@@ -427,7 +487,7 @@ class UniACJ(object):
         if self.logPath != None:
             self.log(self.logPath, pair, result, reviewer)
 
-    def IDComp(self, idPair, result = True, update = None, reviewer = ''):
+    def IDComp(self, idPair, result = True, update = None, reviewer = 'Unknown'):
         '''Adds in a result between a and b where true is a wins and False is b wins, Uses IDs'''
         pair = []
         for p in idPair:
@@ -439,7 +499,7 @@ class UniACJ(object):
             return 0
         return (sum(self.returned)/len(self.returned))*100
 
-    def log(self, path, pair, result, reviewer = ''):
+    def log(self, path, pair, result, reviewer = 'Unknown'):
         '''Writes out a log of a comparison'''
         timestamp = datetime.datetime.now().strftime('_%Y_%m_%d_%H_%M_%S_%f')
         with open(path+os.sep+str(reviewer)+timestamp+".log", 'w+') as file:
