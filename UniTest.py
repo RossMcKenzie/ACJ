@@ -64,6 +64,7 @@ if __name__ == "__main__":
         print(str(rev)+"   "+str(div))
     print(means)
     print(std)
+    print(acj.decisionCount(3))
 
     #print(acc)
     #print(worst)

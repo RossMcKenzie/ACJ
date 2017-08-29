@@ -90,6 +90,12 @@ class MultiACJ(object):
             idPair.append(self.getID(p))
         return idPair
 
+    def WMS(self):
+        ret = []
+        for acj in self.acjs:
+            ret.append(acj.WMS())
+        return ret
+
 
     def comp(self, pair, result = None, update = None, reviewer = 'Unknown'):
         '''Adds in a result between a and b where true is a wins and False is b wins'''
@@ -98,7 +104,7 @@ class MultiACJ(object):
         if self.noOfChoices != len(result):
             raise StandardError('Results list needs to be noOfChoices in length')
         for i in range(self.noOfChoices):
-            self.acjs[i].comp(pair, result[i])
+            self.acjs[i].comp(pair, result[i], update, reviewer)
         if self.logPath != None:
             self.log(self.logPath, pair, result, reviewer)
 
@@ -143,6 +149,9 @@ class MultiACJ(object):
         for r in self.rankings():
                 rank.append(list(zip(r[0], (r[1]-r[1].min())*100/(r[1].max()-r[1].min()))))
         return rank
+
+    def decisionCount(self, reviewer):
+        return self.acjs[0].decisionCount(reviewer)
 
 class UniACJ(object):
     '''Base object to hold comparison data and run algorithm
@@ -507,6 +516,14 @@ class UniACJ(object):
             file.write("A:%s\n" % str(pair[0]))
             file.write("B:%s\n" % str(pair[1]))
             file.write("Winner:%s\n" %("A" if result else "B"))
+
+    def decisionCount(self, reviewer):
+        c = 0
+        for dec in self.decisions:
+            print (dec.reviewer)
+            if (dec.reviewer == reviewer):
+                c = c + 1
+        return c
 
 
     def rankings(self, value=True):

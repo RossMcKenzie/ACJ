@@ -50,5 +50,6 @@ if __name__ == "__main__":
     #worst = np.max(np.abs(true-rank))
     print(acj.results())
     print(acj.reliability())
+    print(acj.decisionCount("Me"))
     #print(acc)
     #print(worst)
