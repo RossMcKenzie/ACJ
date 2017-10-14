@@ -6,10 +6,11 @@ import pickle
 import datetime
 
 class Decision(object):
-    def __init__(self, pair, result, reviewer):
+    def __init__(self, pair, result, reviewer, time):
         self.pair = pair
         self.result = result
         self.reviewer = reviewer
+        self.time = time
 
 def ACJ(data, maxRounds, noOfChoices = 1, logPath = None, optionNames = None):
     if noOfChoices < 2:
@@ -97,18 +98,18 @@ class MultiACJ(object):
         return ret
 
 
-    def comp(self, pair, result = None, update = None, reviewer = 'Unknown'):
+    def comp(self, pair, result = None, update = None, reviewer = 'Unknown', time = 0):
         '''Adds in a result between a and b where true is a wins and False is b wins'''
         if result == None:
             result = [True for _ in range(self.noOfChoices)]
         if self.noOfChoices != len(result):
             raise StandardError('Results list needs to be noOfChoices in length')
         for i in range(self.noOfChoices):
-            self.acjs[i].comp(pair, result[i], update, reviewer)
+            self.acjs[i].comp(pair, result[i], update, reviewer, time)
         if self.logPath != None:
-            self.log(self.logPath, pair, result, reviewer)
+            self.log(self.logPath, pair, result, reviewer, time)
 
-    def IDComp(self, idPair, result = None, update = None, reviewer = ''):
+    def IDComp(self, idPair, result = None, update = None, reviewer = 'Unknown', time = 0):
         '''Adds in a result between a and b where true is a wins and False is b wins. Uses IDs'''
         pair = []
         for p in idPair:
@@ -130,7 +131,7 @@ class MultiACJ(object):
             rel.append(acj.reliability()[0])
         return rel
 
-    def log(self, path, pair, result, reviewer = 'Unknown'):
+    def log(self, path, pair, result, reviewer = 'Unknown', time = 0):
         '''Writes out a log of a comparison'''
         timestamp = datetime.datetime.now().strftime('_%Y_%m_%d_%H_%M_%S_%f')
         with open(path+os.sep+str(reviewer)+timestamp+".log", 'w+') as file:
@@ -139,6 +140,7 @@ class MultiACJ(object):
             file.write("B:%s\n" % str(pair[1]))
             for i in range(len(result)):
                 file.write("Winner of %s:%s\n" %(self.optionNames[i], "A" if result[i] else "B"))
+            file.write("Time:%s\n" % str(time))
 
     def percentReturned(self):
         return self.acjs[0].percentReturned()
@@ -435,9 +437,9 @@ class UniACJ(object):
         SR = (res**2)
         return SR, weight
 
-    def addDecision(self, pair, result, reviewer):
+    def addDecision(self, pair, result, reviewer, time = 0):
         '''Adds an SSR to the SSR array'''
-        self.decisions.append(Decision(pair, result,reviewer))
+        self.decisions.append(Decision(pair, result,reviewer, time))
 
     def revID(self, reviewer):
         return self.reviewers.index(reviewer)
@@ -469,9 +471,9 @@ class UniACJ(object):
             WMSs.append(WMS)
         return list(zip(reviewers, WMSs)), np.mean(WMSs), np.std(WMSs)
 
-    def comp(self, pair, result = True, update = None, reviewer = 'Unknown'):
+    def comp(self, pair, result = True, update = None, reviewer = 'Unknown', time = 0):
         '''Adds in a result between a and b where true is a wins and False is b wins'''
-        self.addDecision(pair, result, reviewer)
+        self.addDecision(pair, result, reviewer, time)
         if pair[::-1] in self.roundList:
             pair = pair[::-1]
             result = not result
@@ -494,21 +496,21 @@ class UniACJ(object):
         self.dat[4,iA] = self.dat[4][iA]+1
         self.dat[4,iB] = self.dat[4][iB]+1
         if self.logPath != None:
-            self.log(self.logPath, pair, result, reviewer)
+            self.log(self.logPath, pair, result, reviewer, time)
 
-    def IDComp(self, idPair, result = True, update = None, reviewer = 'Unknown'):
+    def IDComp(self, idPair, result = True, update = None, reviewer = 'Unknown', time=0):
         '''Adds in a result between a and b where true is a wins and False is b wins, Uses IDs'''
         pair = []
         for p in idPair:
             pair.append(self.getScript(p))
-        self.comp(pair, result, update, reviewer)
+        self.comp(pair, result, update, reviewer, time)
 
     def percentReturned(self):
         if len(self.returned) == 0:
             return 0
         return (sum(self.returned)/len(self.returned))*100
 
-    def log(self, path, pair, result, reviewer = 'Unknown'):
+    def log(self, path, pair, result, reviewer = 'Unknown', time = 0):
         '''Writes out a log of a comparison'''
         timestamp = datetime.datetime.now().strftime('_%Y_%m_%d_%H_%M_%S_%f')
         with open(path+os.sep+str(reviewer)+timestamp+".log", 'w+') as file:
@@ -516,6 +518,7 @@ class UniACJ(object):
             file.write("A:%s\n" % str(pair[0]))
             file.write("B:%s\n" % str(pair[1]))
             file.write("Winner:%s\n" %("A" if result else "B"))
+            file.write("Time:%s\n" % str(time))
 
     def decisionCount(self, reviewer):
         c = 0
