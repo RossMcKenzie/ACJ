@@ -114,7 +114,7 @@ class MultiACJ(object):
         pair = []
         for p in idPair:
             pair.append(self.getScript(p))
-        self.comp(pair, result, update, reviewer)
+        self.comp(pair, result, update, reviewer, time)
 
     def rankings(self, value=True):
         '''Returns current rankings
