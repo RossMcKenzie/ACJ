@@ -523,7 +523,6 @@ class UniACJ(object):
     def decisionCount(self, reviewer):
         c = 0
         for dec in self.decisions:
-            print (dec.reviewer)
             if (dec.reviewer == reviewer):
                 c = c + 1
         return c
