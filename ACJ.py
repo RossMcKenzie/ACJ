@@ -4,6 +4,7 @@ import os
 import numpy as np
 import pickle
 import datetime
+import json
 
 class Decision(object):
     def __init__(self, pair, result, reviewer, time):
@@ -12,7 +13,10 @@ class Decision(object):
         self.reviewer = reviewer
         self.time = time
 
-def ACJ(data, maxRounds, noOfChoices = 1, logPath = None, optionNames = None):
+    def dict(self):
+        return {'Pair':[str(self.pair[0]),str(self.pair[1])], 'Result':str(self.result), 'reviewer':str(self.reviewer), 'time':str(self.time)}
+
+def ACJ(data, maxRounds, noOfChoices = 1, logPath = None, optionNames = ["Choice"]):
     if noOfChoices < 2:
         return UniACJ(data, maxRounds, logPath, optionNames)
     else:
@@ -141,6 +145,11 @@ class MultiACJ(object):
             for i in range(len(result)):
                 file.write("Winner of %s:%s\n" %(self.optionNames[i], "A" if result[i] else "B"))
             file.write("Time:%s\n" % str(time))
+
+    def JSONLog(self):
+        '''Write acjs states to JSON files'''
+        for acj in self.acjs:
+            acj.JSONLog()
 
     def percentReturned(self):
         return self.acjs[0].percentReturned()
@@ -447,29 +456,31 @@ class UniACJ(object):
     def WMS(self, decisions = None):
         '''Builds data lists:
         [reviewer] [sum of SR, sum of weights]
-        and uses it to make [reviewer, WMS] list
+        and uses it to make dict reviewer: WMS
         WMS = Sum SR/Sum weights
         also returns mean and std div'''
         if decisions == None:
             decisions = self.decisions
-        reviewers = []
+        self.reviewers = []
         SRs = []
         weights = []
         for dec in decisions:
-            if dec.reviewer not in reviewers:
-                reviewers.append(dec.reviewer)
+            if dec.reviewer not in self.reviewers:
+                self.reviewers.append(dec.reviewer)
                 SRs.append(0)
                 weights.append(0)
             SR, weight = self.SR(dec.pair, dec.result)
-            revID = reviewers.index(dec.reviewer)
+            revID = self.reviewers.index(dec.reviewer)
             SRs[revID] = SRs[revID] + SR
             weights[revID] = weights[revID] + weight
 
         WMSs = []
-        for i in range(len(reviewers)):
+        WMSDict = {}
+        for i in range(len(self.reviewers)):
             WMS = SRs[i]/weights[i]
             WMSs.append(WMS)
-        return list(zip(reviewers, WMSs)), np.mean(WMSs), np.std(WMSs)
+            WMSDict[self.reviewers[i]]=WMS
+        return WMSDict, np.mean(WMSs), np.std(WMSs)
 
     def comp(self, pair, result = True, update = None, reviewer = 'Unknown', time = 0):
         '''Adds in a result between a and b where true is a wins and False is b wins'''
@@ -520,6 +531,15 @@ class UniACJ(object):
             file.write("Winner:%s\n" %("A" if result else "B"))
             file.write("Time:%s\n" % str(time))
 
+    def JSONLog(self, path = None):
+        '''Writes out a JSON containing data from ACJ'''
+        if path == None:
+            path = self.logPath
+        choice = self.optionNames[0].replace(" ", "_")
+        ACJDict = {"Criteria":choice, "Scripts":self.scriptDict(), "Reviewers":self.reviewerDict(), "Decisions":self.decisionList()}
+        with open(path+os.sep+"ACJ_"+choice+".json", 'w+') as file:
+            json.dump(ACJDict, file, indent=4)
+
     def decisionCount(self, reviewer):
         c = 0
         for dec in self.decisions:
@@ -527,6 +547,28 @@ class UniACJ(object):
                 c = c + 1
         return c
 
+    def reviewerDict(self):
+        revs = {}
+        WMSs, _, _ = self.WMS()
+        for rev in self.reviewers:
+            revDict = {'decisions':self.decisionCount(rev), 'WMS':WMSs[rev]}
+            revs[str(rev)]= revDict
+        print(len(revs))
+        return revs
+
+    def scriptDict(self):
+        scr = {}
+        r = self.results()[0]
+        for i in range(len(r)):
+            scrDict = {"Score":r[i][1]}
+            scr[str(r[i][0])] = scrDict
+        return scr
+
+    def decisionList(self):
+        dec = []
+        for d in self.decisions:
+            dec.append(d.dict())
+        return dec
 
     def rankings(self, value=True):
         '''Returns current rankings
