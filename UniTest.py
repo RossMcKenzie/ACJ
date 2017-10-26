@@ -5,14 +5,14 @@ import random
 
 if __name__ == "__main__":
     np.set_printoptions(precision=2)
-    rounds = 16
+    rounds = 8
     length = 100
     errBase = 0.0
     judges = 2
     true = np.asarray([i+1 for i in range(length)])
     dat = true[:]
     np.random.shuffle(dat)
-    acj = ACJ(dat, rounds)
+    acj = ACJ(dat, rounds, optionNames = ["Hello"], logPath = "TestLogs")
     i = 0
     reviewers = [i for i in range(10)]
 
@@ -60,11 +60,12 @@ if __name__ == "__main__":
     print(acj.reliability())
     WMS, means, std = acj.WMS()
     for rev in WMS:
-        div = abs(rev[1]-means)/std
+        div = abs(WMS[rev]-means)/std
         print(str(rev)+"   "+str(div))
     print(means)
     print(std)
     print(acj.decisionCount(3))
+    acj.JSONLog()
 
     #print(acc)
     #print(worst)
