@@ -6,6 +6,7 @@ import random
 if __name__ == "__main__":
     np.set_printoptions(precision=2)
     rounds = 16
+    maxRounds = 14
     length = 100
     errBase = 0.5
     judges = 3
@@ -16,7 +17,7 @@ if __name__ == "__main__":
     random.shuffle(dat2)
     dat = list(zip(dat1, dat2))
     choices = 2
-    acj = ACJ(dat, rounds, choices, logPath = "TestLogs", optionNames = ["A", "B"])
+    acj = ACJ(dat, maxRounds, choices, logPath = "TestLogs", optionNames = ["A", "B"])
     i = 0
     reviewer = "Me"
     with open(r"acj.pkl", "wb") as output_file:
@@ -24,7 +25,7 @@ if __name__ == "__main__":
     del(acj)
     with open(r"acj.pkl", "rb") as input_file:
         acj = pickle.load(input_file)
-    while (True):
+    for i in range(int(rounds*(length/2))):
         print(acj.percentReturned())
         i = i+1
         if (acj.step == 0):

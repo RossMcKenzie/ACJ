@@ -197,19 +197,19 @@ class UniACJ(object):
 
     def nextRound(self, extRoundList = None):
         '''Returns next round of pairs'''
+        print("Hello")
         self.round = self.round+1
         self.step = 0
         if self.round > self.maxRounds:
-            self.roundList = None
+            self.maxRounds = self.maxRounds+1
+        #print(self.round)
+        if self.round > 1:
+            self.updateAll()
+        if extRoundList == None:
+            self.roundList = self.infoPairs()
         else:
-            #print(self.round)
-            if self.round > 1:
-                self.updateAll()
-            if extRoundList == None:
-                self.roundList = self.infoPairs()
-            else:
-                self.roundList = extRoundList
-            self.returned = [False for i in range(len(self.roundList))]
+            self.roundList = extRoundList
+        self.returned = [False for i in range(len(self.roundList))]
         return self.roundList
 
     def polittNextRound(self):
