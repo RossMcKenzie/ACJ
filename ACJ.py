@@ -201,7 +201,7 @@ class UniACJ(object):
         self.round = self.round+1
         self.step = 0
         if self.round > self.maxRounds:
-            self.maxRounds = self.maxRounds+1
+            self.maxRounds = self.round
         #print(self.round)
         if self.round > 1:
             self.updateAll()
